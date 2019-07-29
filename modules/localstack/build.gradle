@@ -4,6 +4,13 @@ dependencies {
     compile project(':testcontainers')
 
     compileOnly 'com.amazonaws:aws-java-sdk-s3:1.11.479'
+    compileOnly 'software.amazon.awssdk:s3:2.7.13'
+
+    testCompile 'org.assertj:assertj-core:3.12.2'
+
     testCompile 'com.amazonaws:aws-java-sdk-s3:1.11.479'
     testCompile 'com.amazonaws:aws-java-sdk-sqs:1.11.598'
+
+    testCompile 'software.amazon.awssdk:s3:2.7.13'
+    testCompile 'software.amazon.awssdk:sqs:2.7.13'
 }

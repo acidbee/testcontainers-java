@@ -1,13 +1,12 @@
 package org.testcontainers.containers.localstack;
 
-
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.CreateQueueResult;
 import com.amazonaws.services.sqs.model.Message;
 import org.apache.commons.io.IOUtils;
@@ -22,14 +21,16 @@ import java.util.Set;
 import static java.util.stream.Collectors.toSet;
 import static org.rnorth.visibleassertions.VisibleAssertions.assertEquals;
 import static org.rnorth.visibleassertions.VisibleAssertions.assertTrue;
-import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
-import static org.testcontainers.containers.localstack.LocalStackContainer.Service.SQS;
+import static org.testcontainers.containers.localstack.Service.S3;
+import static org.testcontainers.containers.localstack.Service.SQS;
+
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * The only tests that should go here are for those Localstack services that require special testcontainers code to work with them.
  * For example, S3 needs a test to ensure special HTTP routing to the S3 container works.
  */
-public class SimpleLocalstackTest {
+public class SimpleLocalstackSdk1Test {
 
     private static final String BUCKET_1 = "bucket1";
     private static final String BUCKET_2 = "bucket2";
@@ -37,16 +38,15 @@ public class SimpleLocalstackTest {
     private static final String DUMMY_CONTENT = "baz";
 
     @ClassRule
-    public static LocalStackContainer localstack = new LocalStackContainer()
-        .withServices(S3, SQS);
+    public static LocalStackContainerSdk1 localstack = new LocalStackContainerSdk1()
+                                                                .withServices(S3, SQS);
 
     @Test
-    public void simpleS3Test() throws IOException {
-        AmazonS3 s3 = AmazonS3ClientBuilder
-            .standard()
-            .withEndpointConfiguration(localstack.getEndpointConfiguration(S3))
-            .withCredentials(localstack.getDefaultCredentialsProvider())
-            .build();
+    public void simpleS3Test() throws IOException, ReflectiveOperationException {
+        AmazonS3 s3 = localstack.getServiceClient(S3, AmazonS3Client.class);
+
+        assertThat(s3).isNotNull();
+        assertThat(s3).isInstanceOf(AmazonSQSClient.class);
 
         s3.createBucket(BUCKET_1);
         s3.putObject(BUCKET_1, ITEM_KEY, DUMMY_CONTENT);
@@ -74,11 +74,8 @@ public class SimpleLocalstackTest {
     }
 
     @Test
-    public void simpleSQSTest() {
-        AmazonSQS sqs = AmazonSQSClientBuilder.standard()
-            .withEndpointConfiguration(localstack.getEndpointConfiguration(SQS))
-            .withCredentials(localstack.getDefaultCredentialsProvider())
-            .build();
+    public void simpleSQSTest() throws ReflectiveOperationException {
+        AmazonSQS sqs = localstack.getServiceClient(Service.SQS, AmazonSQSClient.class);
 
         CreateQueueResult queueResult = sqs.createQueue("baz");
         String queueUrl = queueResult.getQueueUrl();
